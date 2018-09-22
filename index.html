@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>RBFN</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/css/materialize.min.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="linkers/engine_linker.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+</head>
+<body>
+  <nav class="light-blue">
+    <div class="nav-wrapper">
+      <a class="brand-logo left" style="padding-left: 20px;">Radial Basis Function Neural Network</a>
+    </div>
+  </nav>
+
+
+  <div class="row">
+    <div class="col s3">
+      <button onclick="buttonClicked()" class="waves-effect waves-light btn-large" style="margin: 20px 0 0 20px;">Load Dataset<i class="material-icons right">queue</i></button>
+    </div>
+
+    <div class="col s3">
+      <p style="margin: 40px 0 0 -50px;">
+      <label>
+        <input  type="checkbox" id="chkbox" class="filled-in" disabled="disabled" />
+        <span>Dataset</span>
+      </label>
+      </p>
+    </div> 
+  </div>
+
+  
+  <div class="row" style="padding: 0 0 0 20px;">
+    <h4 style="padding: 30px 0 0 20px;">Parameters</h4>
+    <div class="col s4">
+    <!-- PARAMETERS -->
+    <div class="divider"></div>
+    <div class="section">
+      <h5>Choose hidden layer size</h5>
+
+        <form action="#">
+          <p>
+            <label>
+              <input id="centers1" name="group1" type="radio" checked />
+              <span>Calculate appropriate number of centers with MSE</span>
+            </label>
+          </p>
+          <p>
+            <label>
+              <input id="centers2" name="group1" type="radio" />
+              <span class="inline">Set number of centers manually <input type="number" id="numCen" value="3" min="1" max="20"></span>
+            </label>
+          </p>
+        </form>
+    </div>
+    <div class="divider"></div>
+    <div class="section">
+      <h5>Choose center locations</h5>
+        
+        <form action="#">
+          <p>
+            <label>
+              <input id="randomDp" name="group2" type="radio" checked />
+              <span>Pick random datapoints as centers</span>
+            </label>
+          </p>
+          <p>
+            <label>
+              <input id="kMeans" name="group2" type="radio" />
+              <span>Use k-means clustering</span>
+            </label>
+          </p>
+        </form>
+    </div>
+    <div class="divider"></div>
+    <div class="section">
+      <h5>Choose width (spread) for clusters</h5>
+        
+        <form action="#">
+          <p>
+            <label>
+              <input id="sigma" name="group3" type="radio" checked />
+              <span>Use equal spread</span>
+            </label>
+          </p>
+          <p>
+            <label>
+              <input id="stdDev" name="group3" type="radio" />
+              <span>Use p-nearest neighbours heuristics</span>
+            </label>
+          </p>
+        </form>
+    </div>
+    <button class="btn waves-effect waves-light" onclick="get_params(Data)">Calculate
+      <i class="material-icons right">school</i>
+    </button>
+  </div>
+
+  <div class="col s8" style="margin-top: -150px;">
+    <!-- IMAGE -->
+    <div class="light-blue"><img id="image" class="responsive-img" src="graph2.png" style="width: 600px; height: 350px; float: right; border: 2px solid #03A9F5;"></div>
+
+    <!-- TEXTAREA -->
+    <textarea readonly id="textArea" style="overflow-y: scroll; height: 300px; width: 600px; float: right; resize: vertical; margin-top: 50px; border: 2px solid #03A9F5;" rows="50" cols="50"></textarea>
+    </div>
+  </div>
+
+
+  <script>
+    let Data;
+    const electron = require('electron');
+    const { ipcRenderer } = require('electron');
+    const url = require('url');
+    const path = require('path');
+
+    function buttonClicked() {
+      const remote = require('electron').remote;
+      const BrowserWindow = remote.BrowserWindow;
+
+      var win = new BrowserWindow({ width: 800, height: 600, title:'Open new dataset' });
+      //Load html into window
+      win.loadURL(url.format({
+        pathname: path.join(__dirname, 'addDataset.html'),
+        protocol:'file',
+        slashes: true
+      }));
+      //Garbage collection handle
+      win.on('close', function(){
+        win = null;
+      });
+    }
+
+    ipcRenderer.on('update-checkbox', (event, arg) => {
+      //console.log(arg.message);
+      if (arg.message != "") {
+        document.getElementById("chkbox").checked = true;
+      }
+      else {
+        document.getElementById("chkbox").checked = false;
+      }
+      Data = arg.message;
+      //console.log(Data);
+    });
+
+  </script>
+</body>
+</html>

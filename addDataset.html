@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/css/materialize.min.css">
+  	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<title></title>
+
+	<style>
+		#btn-readfile {
+			margin: 20px 0 0 20px;
+		}
+	</style>
+</head>
+<body>
+	<nav class="light-blue">
+    	<div class="nav-wrapper">
+    	  <a class="brand-logo left" style="padding-left: 20px;">Load Dataset</a>
+    	</div>
+  	</nav>
+
+  	<a class="btn-floating btn-large waves-effect waves-light light-blue" id="btn-readfile"><i class="material-icons">add</i></a>
+	
+
+	<div class="col s12" style="margin-top: -180px;">
+    	<!-- TEXTAREA -->
+    	<textarea readonly id="fileText" style="overflow-y: scroll; height: 300px; width: 700px; resize: vertical; font-size: 18px; font-family: Helvetica; margin: 200px 0 0 40px; border: 2px solid #03A9F5;" rows="50" cols="50"></textarea>
+    	</div>
+  	</div>
+
+  	<button id="btn" class="waves-effect waves-light btn-large" style="margin: 10px 20px 0 0; float: right;">Load Dataset<i class="material-icons right">queue</i></button>
+
+
+<script>
+	//File system module
+	const fs = require('fs');
+	const {dialog} = require('electron').remote;
+	const { ipcRenderer } = require('electron');
+	const remote = require('electron').remote;
+
+	let Data;
+
+	//Opening a file and displaying it in textbox
+	document.getElementById("btn-readfile").addEventListener("click", () => {
+		dialog.showOpenDialog((fileNames) => {
+			if (fileNames === undefined) {
+				console.log("No file was selected");
+				return;
+			}
+
+			fs.readFile(fileNames[0], "utf-8", (err, data) => {
+				if(err){
+					console.log("Cannot read file ", err);
+					return;
+				}
+				console.log("The content of the file is: ");
+				console.log(data);
+				document.getElementById("fileText").value = data;
+				//Data = data;
+			});
+		});
+	}, false);
+
+	document.getElementById("btn").addEventListener("click", () => {
+		let Data = {
+			message: document.getElementById("fileText").value
+		};
+		console.log("Btn clicked");
+		//Sending file to script
+		ipcRenderer.send('reply', Data);
+		var window = remote.getCurrentWindow();
+        window.close();
+	}, false);
+	
+
+</script>
+</body>
+</html>
