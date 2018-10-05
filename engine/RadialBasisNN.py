@@ -197,30 +197,6 @@ class RBFNetwork:
         self.protos = centroids
         #print(self.protos)
 
-
-    def generatePrototypes(self):
-        if self.numClasses == 2:
-            class0 = np.count_nonzero(self.scaledData[:, -1] == 0)
-            print(class0)
-            class1 = np.count_nonzero(self.scaledData[:, -1] == 1)
-            print(class1)
-            group1 = np.random.randint(0,class0,size=self.pTypes)
-            group2 = np.random.randint(class0+1,class0+class1,size=self.pTypes)
-            self.protos = np.vstack([self.protos, self.scaledData[group1,:]])
-            self.protos = np.vstack([self.protos, self.scaledData[group2,:]])
-        if self.numClasses == 3:
-            x, y = self.scaledData[:].shape
-            x = math.floor(x / self.numClasses)
-            group1 = np.random.randint(0,x,size=self.pTypes)
-            group2 = np.random.randint(x+1,2*x,size=self.pTypes)
-            group3 = np.random.randint(2*x+1,3*x,size=self.pTypes)
-            self.protos = np.vstack([self.protos, self.scaledData[group1,:]])
-            self.protos = np.vstack([self.protos, self.scaledData[group2,:]])
-            self.protos = np.vstack([self.protos, self.scaledData[group3,:]])
-        
-        self.protos = np.delete(self.protos, len(self.protos[0])-1, axis=1)
-        return self.protos
-
     def pickDatapoints(self, numOfNeurons):
     	#print(len(self.scaledData[:]))
     	group = np.random.randint(0, len(self.scaledData[:]), size=numOfNeurons)
