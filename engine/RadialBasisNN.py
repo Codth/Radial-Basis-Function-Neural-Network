@@ -22,7 +22,7 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore",category=DeprecationWarning)
     from sklearn.cross_validation import StratifiedShuffleSplit
 
-#GRAB PARAMETERS FOR RBFN
+#GRAB PARAMETERS FOR RBFN FROM USER INTERFACE
 hiddenSizeCalc = str(sys.argv[1])
 ManualHiddenSize = str(sys.argv[2])
 ManualNumber = sys.argv[3]
@@ -38,6 +38,7 @@ stdDevWidth = str(sys.argv[7])
 
 Dataset_raw = sys.argv[8]
 
+#Convert JS bool types to integer 1 or 0
 param_list = [hiddenSizeCalc, ManualHiddenSize, randomDp, kMeansCenters, SigmaWidth, stdDevWidth]
 paramBool_list = []
 for item in param_list:
@@ -46,8 +47,6 @@ for item in param_list:
     elif (item == "false"):
         item = 0
     paramBool_list.append(item)
-
-#print(Dataset)
 
 
 ####PREPROCESS OF THE DATASET######
@@ -74,15 +73,15 @@ def data_preprocess(raw_data):
     
     #replace question marks with NaN
     result = result.replace(['?', '-'], np.nan)
-    # drop rows with missing values
+    #drop rows with missing values
     result = result.dropna()
     dataset = result.values
     dataset = np.array(dataset).astype(np.float)
 
-    # Find the min and max values for each column
+    #Find the min and max values for each column
     stats = [[min(column), max(column)] for column in zip(*dataset)]
 
-    # Rescale dataset columns to the range 0-1 - normalization
+    #Rescale dataset columns to the range 0-1 - normalization
     for row in dataset:
         for i in range(len(row)-1):
             row[i] = (row[i] - stats[i][0]) / (stats[i][1] - stats[i][0])
@@ -105,12 +104,12 @@ elif (bool((not paramBool_list[4]) and paramBool_list[5])):
     spread_method = 'std_dev'
 
 
-#distance between multidimensional data points
+#distance between multidimensional data points - euclidean distance
 def euclidean_distance(a, b):
 	return np.linalg.norm(a-b)
 
 
-# RBFNN
+### RBFNN ###
 class RBFNetwork:
     def __init__(self, scaledData, testData, numClasses, NumOfRBF = 0):
         #set the number of RBF neurons
@@ -118,7 +117,6 @@ class RBFNetwork:
         self.scaledData = scaledData
         self.protos = np.zeros(shape=(0, len(self.scaledData[1])))
         self.testData = testData      
-        #print (len(self.scaledData[1]))
         self.labels = self.scaledData[:,[-1]].astype(np.int)
         self.testLabels = self.testData[:,[-1]].astype(np.int)
         self.predictedLabels = np.zeros(shape=(1, 0))
@@ -127,7 +125,6 @@ class RBFNetwork:
         self.MSE = 0
         self.numClasses = numClasses
         self.spread = np.zeros(shape=(1, self.RBFs))
-        #self.conf_matrix = np.zeros(shape=(0,10))
         #delete class column from dataset
         self.scaledDatanoClassColumn = np.delete(self.scaledData, len(self.scaledData[0])-1, axis=1)
         self.testDatanoClassColumn = np.delete(self.testData, len(self.testData[0])-1, axis=1)
@@ -149,9 +146,7 @@ class RBFNetwork:
             newTestRow = np.zeros(shape=(1, len(np.unique(self.labels))))
             newTestRow[:, posNum-1] = 1
             self.Test_Labels = np.vstack([self.Test_Labels, newTestRow]).astype(np.int)
-        #print(self.ClassLabels.shape)
-        #print(self.Test_Labels.shape)
-        #exit()
+
 
     def kmeans(self, k, dataset, epsilon=0):
         num_instances, num_features = dataset.shape
@@ -174,7 +169,7 @@ class RBFNetwork:
             #iterate trough dataset
             for index_instance, instance in enumerate(dataset):
                 dist_vec = np.zeros((k, 1))
-                #iterate trough all k centroids
+                #iterate trough all centroids
                 for index_prototype, prototype in enumerate(centroids):
                 	#compute distance between each centroid (prototype) and all data points
                     dist_vec[index_prototype] = euclidean_distance(prototype, instance)
@@ -187,7 +182,7 @@ class RBFNetwork:
             for index in range(len(centroids)):
             	#all data points that belong to cluster
                 instances_close = [i for i in range(len(currentCluster)) if currentCluster[i] == index]
-                #calculating mean from those data points
+                #calculating mean
                 if dataset[instances_close].any():
                 	prototype = np.mean(dataset[instances_close], axis=0)
                 	tmpCluster[index, :] = prototype
@@ -198,13 +193,14 @@ class RBFNetwork:
         #print(self.protos)
 
     def pickDatapoints(self, numOfNeurons):
-    	#print(len(self.scaledData[:]))
+    	#Pick a number of random samples from data set
     	group = np.random.randint(0, len(self.scaledData[:]), size=numOfNeurons)
     	self.protos = np.vstack([self.protos, self.scaledData[group,:]])
     	self.protos = np.delete(self.protos, len(self.protos[0])-1, axis=1)
     	return self.protos
 
     def sigma(self, numOfNeurons):
+    	#Equal spread method
         dTemp = 0
         for i in range(0, numOfNeurons):
             for k in range(0, numOfNeurons):
@@ -218,6 +214,7 @@ class RBFNetwork:
         #print (self.spread)
 
     def std_dev(self, numOfNeurons):
+    	#p-nearest neighbour heuristics
         self.spread = np.zeros(shape=(1, numOfNeurons))
         if numOfNeurons == 2:
         	self.sigma(numOfNeurons)
@@ -249,6 +246,7 @@ class RBFNetwork:
         self.weights = 0
         self.spread = np.zeros(shape=(1, numOfNeurons))
 
+        #Set training variants for centers and spreads
         if (training_method == 'random'):
             self.pickDatapoints(numOfNeurons)
         elif (training_method == 'k-means'):
@@ -258,6 +256,7 @@ class RBFNetwork:
         elif (spread_method == 'std_dev'):
             self.std_dev(numOfNeurons)
 
+        #calculate outputs from hidden layer
         hiddenOut = np.zeros(shape=(0, numOfNeurons))
         for item in self.scaledDatanoClassColumn:
             out=[]
@@ -272,14 +271,12 @@ class RBFNetwork:
             hiddenOut = np.vstack([hiddenOut,np.array(out)])
         #print ("hiddenOut:\n", hiddenOut)
 
-        #print ("klase:\n", self.numClassLabels[0])
-        #print ("pseudo inverz:\n", pinv(hiddenOut).shape)
+        #calculate second layer weights
         if hiddenOut.any():
             self.weights = np.dot(pinv(hiddenOut), self.ClassLabels)
-        #print (self.weights)
-        #print (self.weights.shape)
 
     def hiddenSize(self):
+    	#calculate apropriate network size
         MSEepoch = np.zeros(shape=(0,0))
         for size in range(2, 21):
             MSE = np.zeros(shape=(0,0))
@@ -288,7 +285,6 @@ class RBFNetwork:
             #validationData, otherData = train_test_split(self.scaledData, test_size=0.5)
             kfold = KFold(10, True, 5)
 
-            
             for train, test in kfold.split(self.scaledData):
                 netOutputs = np.zeros(shape=(0, self.numClasses))
                 for item in self.scaledData[train][:,0:-1]:
@@ -303,7 +299,6 @@ class RBFNetwork:
                     #print ("NeuOut:", netOut)
                     netOutputs = np.vstack([netOutputs, netOut])
                 #print(netOutputs.shape)
-                #exit()
         
                 x, y = self.scaledData[train].shape
                 validationDataExact = np.zeros(shape = (0,len(np.unique(self.labels))))
@@ -315,8 +310,6 @@ class RBFNetwork:
 
                 #MSE for outputs
                 squaredError = 0
-                #print(validationDataExact.shape)
-                #print(netOutputs.shape)
                 for i, value in enumerate(validationDataExact):       	
                 	for x in range(0, self.numClasses):
                 		squaredError += (validationDataExact[i, x] - netOutputs[i, x]) ** 2
@@ -337,12 +330,11 @@ class RBFNetwork:
         if (os.path.isfile(strFile)):
             os.remove(strFile)
         plt.savefig('figure.png')
-        #plt.show()
-        #mpld3.show()
         self.OptimalCenters = ks[minx]
         print("Optimal number of hidden neurons: ", self.OptimalCenters)
 
     def test(self):
+    	#test the network on test subset
         counter = 0
         correct_predictions = 0
         self.accuracy = 0
@@ -356,47 +348,25 @@ class RBFNetwork:
                 neuronOut = np.exp(-(distance)/(2 * np.square(self.spread[0, i])))
                 out.append(neuronOut)
             netOut = np.dot(np.array(out),self.weights)
-            #print ('---------------------------------')
-            #print (netOut)
             self.PredictionValue = np.vstack([self.PredictionValue, netOut])
-            #print (np.max(netOut))
-            #print (self.threeTestLabels)
             predictedClass = netOut.argmax(axis=0) + 1
             realClass = self.Test_Labels[counter].argmax(axis=0) + 1
-            #print ('Predicted class is ',predictedClass)
-            #print ('Real class is ', realClass)
+
             #count the number of correct predictions
             if (predictedClass == realClass):
             	correct_predictions = correct_predictions + 1
             self.predictedLabels = np.append(self.predictedLabels, predictedClass)
             counter = counter + 1
 
-        #calculate accuracy of the network
-        #print (len(self.threeTestLabels[:]))
-        #print (self.PredictionValue)
-        #self.accuracy = (correct_predictions / len(self.numClassLabels[1][:])) * 100
-        #print ("Accuracy score: ", self.accuracy, "%")
-        #self.MeanSquaredError()
         self.conf_matrix()
         self.ClassificationReport()
-
-        #printing results to txt file
-        #sys.stdout = open("{}.txt".format(datetime.now().strftime("%Y-%m-%d_%H-%M-%S")),"w+")
-        #print ("Accuracy score: ", accuracy, "%")
-        #self.MeanSquaredError()
-        #print (self.conf_matrix)
-        #self.ClassificationReport()
         
-    #confusion matrix
     def conf_matrix(self):
+        #confusion matrix
         for item in self.testLabels:
         	self.testLabelsLine = np.append(self.testLabelsLine, item)
-        #print (self.testLabelsLine)
-        #print (self.predictedLabels)
 
         self.conf_matrix = confusion_matrix(self.testLabelsLine, self.predictedLabels)
-        #print ("Confusion matrix:")
-        #print (self.conf_matrix)
 
     def MeanSquaredError(self):
     	squaredError = 0
@@ -415,7 +385,9 @@ class RBFNetwork:
     	#print (report)
 
 
-###TESTING RBFN
+
+###TESTING RBFN###
+
 Total_conf_matrix = np.zeros(shape=(len(np.unique(dataset[:,-1])),len(np.unique(dataset[:,-1]))))
 
 #CHOOSING HOW TO DETERMINE HIDDEN SIZE
