@@ -12,7 +12,7 @@ npm start
 
 If you wish to use just the terminal version of neural network, run 
 ```
-RBFN_bash/RadialBasisNN_bash.py
+python RBFN_bash/RadialBasisNN_bash.py
 ```
 
 ### Prerequisites
