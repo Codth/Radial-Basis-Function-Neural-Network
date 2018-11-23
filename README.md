@@ -5,13 +5,15 @@ This project includes radial basis function neural network (RBFN) made in Python
 ## Getting Started
 
 After cloning this repository, start the application.
-
-### `git clone https://github.com/afalak94/Radial-Basis-Function-Neural-Network.git`
-### `npm start`
+```
+git clone https://github.com/afalak94/Radial-Basis-Function-Neural-Network.git
+npm start
+```
 
 If you wish to use just the terminal version of neural network, run 
-
-### `RBFN_bash/RadialBasisNN_bash.py`
+```
+RBFN_bash/RadialBasisNN_bash.py
+```
 
 ### Prerequisites
 
