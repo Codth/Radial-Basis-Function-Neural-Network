@@ -1,6 +1,6 @@
-# Radial-Basis-Function-Neural-Network
+# Radial Basis Function Neural Network
 
-This project includes radial basis function neural network (RBFN) made in Python 3.5.2 and desktop application made using Electron technology.
+This project includes radial basis function neural network (RBFNN) made in Python 3.5.2 and desktop application made using Electron technology.
 
 ## Getting Started
 
